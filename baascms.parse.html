@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>BaasCMS admin panel</title>
+		
+		<link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet" />
+
+		<script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/underscore.string/2.3.3/underscore.string.min.js"></script>
+		<script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
+		<script src="//www.parsecdn.com/js/parse-1.2.19.min.js"></script>
+		<script src="//cdn.rawgit.com/mtrpcic/pathjs/master/path.min.js"></script>
+
+		<script src="baascms.js"></script>
+		<script src="baascms-adapter-parse.js"></script>
+		<script src="baascms-front-app.js"></script>
+
+		<script>
+			Parse.initialize("", "");
+			
+			BaasCMS.init({
+				baas: 'Parse'
+			});			
+		</script>
+   </head>
+    <body>	
+		<nav class="navbar navbar-default" role="navigation">
+			<div class="container-fluid">
+				<div class="navbar-header">
+					<a class="navbar-brand" href="#">BaasCMS</a>
+				</div>
+				<div class="collapse navbar-collapse">
+					<ul class="nav navbar-nav" id="menu">			
+						<script>
+							new Widget.categories({
+								el: '#menu',
+								query: {
+									where: {
+										marker: 'menu'
+									}
+								}
+							});
+						</script>
+					</ul>
+				</div>
+			</div>
+		</nav>	
+
+		<div class="container">
+			<div class="row">
+				<div class="col-sm-3" style="padding-top:50px;">
+					<div class="panel panel-default">
+						<div class="panel-heading">Categories</div>
+						<div class="panel-body" id="catalog">
+							<script>
+								new Widget.categories({
+									selector: '#catalog',
+									query: {
+										where: {
+											marker: 'catalog'
+										}
+									}
+								});
+							</script>
+						</div>
+					</div>
+				</div>
+				
+				<div class="col-sm-8 col-sm-offset-1" id="items">
+					<script>					
+						new Widget.main({
+							selector: '#items',
+							pattern: {
+								Article: {
+									perPage: 20
+								},
+								Product: {
+									perPage: 20
+								}
+							}
+						});
+					</script>
+				</div>
+			</div>
+		</div>		
+		
+		<script id="template-panel-categories" type="text/template">
+			<h1>Main page</h1>
+			
+			<div id="about"></div>
+			<<%= "script" %>>
+				new Widget.categories({
+					selector: '#about'
+				});
+			</<%= "script" %>>
+			
+			<div id="last-articles"></div>
+			<<%= "script" %>>
+				new Widget.items({
+					selector: '#last-articles'
+				});
+			</<%= "script" %>>
+			
+		</script>
+		
+    </body>
+</html>
