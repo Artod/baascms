@@ -1,4 +1,9 @@
-;(function(window, document, _, JSON, $, undefined) {
+/*
+ * BaasCMS core
+ * Copyright (c) 2014 Artod gartod@gmail.com
+*/
+
+;(function(window, document, _, $, undefined) {
     window.BaasCMS = (window.BaasCMS || {});
     var BaasCMS = window.BaasCMS;
 
@@ -878,7 +883,7 @@ console.log('Get cache '+ modelName + ': ' + cacheKey);
         });
     };
 
-})(window, document, window._, window.JSON, window.jQuery);
+})(window, document, window._, window.jQuery);
 
                /* setItemsOpts: function(patternName) {
                     var dasherized = _.str.dasherize(patternName);

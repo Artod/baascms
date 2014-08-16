@@ -1,4 +1,8 @@
-/* Parse.com engine */
+/*
+ * BaasCMS adapter for Parse.com
+ * Copyright (c) 2014 Artod gartod@gmail.com
+*/
+
 ;(function(root, _, $, Parse, undefined) {
     var ParseAdapter = (function() {
         var _onError = function(modelName, error) {                    
