@@ -101,6 +101,8 @@
         }
     };
 
+    BaasCMS.loadHomePage = function() {}; // for admin panel
+    
     BaasCMS.widgets = _.extend( (BaasCMS.widgets || {}), {
         Categories: (function() {
             var Categories = function(options) {
@@ -844,6 +846,7 @@ console.log('Get cache '+ modelName + ': ' + cacheKey);
         return Adapter;
     })();
 
+    BaasCMS.inited = BaasCMS.inited || false;
     BaasCMS.init = function(options) {
         BaasCMS.opts = _.extend({
             baas: 'Parse',
@@ -881,6 +884,8 @@ console.log('Get cache '+ modelName + ': ' + cacheKey);
                 }
             }
         });
+    
+        BaasCMS.inited = true;
     };
 
 })(window, document, window._, window.jQuery);
