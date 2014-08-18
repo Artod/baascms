@@ -5,10 +5,6 @@
 
 ;(function(root, _, $, Parse, undefined) {
     var ParseAdapter = (function() {
-        var _onError = function(modelName, error) {                    
-            console.error('Error with ' + modelName + ': ' + error.message);
-        };
-        
         var _extractData = function(results, first) {            
             results = results || [];            
             results = _.isArray(results) ? results : [results];
@@ -95,7 +91,6 @@
                     deferred.resolve(data);
 // }, Math.random() * 2000)
                 }).fail(function(error) {
-                    _onError(modelName, error);
                     deferred.reject(error);
                 });
                 
@@ -104,7 +99,7 @@
             _count: function(modelName, opts, deferred) {
                 var Model = Parse.Object.extend(modelName),
                     query = new Parse.Query(Model);
-
+                    
                 _setOptions(query, '', opts);
             
                 query._limit = 0;                
@@ -114,9 +109,8 @@
                 
                 query.count().done(function(count) {
                     deferred.resolve(count);
-                }).fail(function(model, error) {
-                    _onError(modelName, error);
-                    deferred.reject(modelName, error);
+                }).fail(function(error) {
+                    deferred.reject(error);
                 });
                 
                 return deferred.promise();
@@ -137,8 +131,7 @@
                     deferred.resolve(savedData.id);
 // }, Math.random() * 2000)
                 }).fail(function(error) {
-                    _onError(modelName, error);
-                    deferred.reject(modelName, error);
+                    deferred.reject(error);
                 });
                 
                 return deferred.promise();
@@ -156,8 +149,7 @@
                 Parse.Object.destroyAll(models).done(function(result) {
                     deferred.resolve(ids);
                 }).fail(function(error) {
-                    _onError(modelName, error);
-                    deferred.reject(modelName, error);
+                    deferred.reject(error);
                 });
                 
                 return deferred.promise();

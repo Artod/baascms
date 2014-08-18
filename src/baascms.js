@@ -1,6 +1,7 @@
 /*
- * BaasCMS core
+ * BaasCMS core v. 1.0.0
  * Copyright (c) 2014 Artod gartod@gmail.com
+ * MIT License
 */
 
 ;(function(window, document, _, $, undefined) {
@@ -630,7 +631,8 @@
             this.opts = _.extend({
                 cmsOpts: {},
                 onStart: function() {},
-                onComplete: function() {}
+                onComplete: function() {},
+                onError: function() {}
             }, opts);
 
             this._cache = {};
@@ -642,6 +644,7 @@
 
             if (typeof adapter === 'function') {
                 var adapter = new adapter(opts.cmsOpts);
+
                 _.extend(this, adapter);
             }
         }
@@ -696,6 +699,8 @@ console.log('Concurrents ' + cacheKey);
                     query.done(function(data) {
                         that._cache[modelName] = that._cache[modelName] || {};
                         that._cache[modelName][cacheKey] = JSON.stringify(data);
+                    }).fail(function(error) {
+                        that.opts.onError(modelName, 'query', error);
                     }).always(function() {
                         delete that._concurrents[concurrentsKey];
                         that.onComplete(queryUid);
@@ -738,6 +743,8 @@ console.log('Get cache '+ modelName + ': ' + cacheKey);
 
                 return this._save(modelName, opts, deferred).done(function(id) {
                     delete that._cache[modelName];
+                }).fail(function(error) {
+                    that.opts.onError(modelName, 'save', error);
                 }).always(function() {
                     that.onComplete(queryUid);
                 });
@@ -753,6 +760,8 @@ console.log('Get cache '+ modelName + ': ' + cacheKey);
 
                 return this._del(modelName, ids, deferred).done(function() {
                     delete that._cache[modelName];
+                }).fail(function(error) {
+                    that.opts.onError(modelName, 'delete', error);
                 }).always(function() {
                     that.onComplete(queryUid);
                 });
@@ -846,10 +855,39 @@ console.log('Get cache '+ modelName + ': ' + cacheKey);
         return Adapter;
     })();
 
+    BaasCMS.message = function(message, type, delay) {
+        var $messages = $('#baascms-messages'), 
+            template = _.template( $('#template-baascms-message').html() || '' );
+        
+        if (type === 'danger') {
+            console.error(message);            
+        }
+        
+        $messages.fadeIn().append(template({
+            message: message,
+            type: type
+        }) );        
+        
+        var $newMessage = $messages.children().last();
+
+        setTimeout(function() {
+            $newMessage.fadeOut(function() {
+                $(this).remove();
+                
+                if ( !$messages.children().length ) {
+                    $messages.hide();
+                }
+            });
+        }, delay || 2000);
+    };
+    
     BaasCMS.inited = BaasCMS.inited || false;
     BaasCMS.init = function(options) {
         BaasCMS.opts = _.extend({
             baas: 'Parse',
+            onError: function(modelName, type, error) {                
+                BaasCMS.message('Error ' + type + ' ' + modelName + ': ' + error.message, 'danger');
+            },
             loaderDelay: 300
         }, options);
 
@@ -863,6 +901,9 @@ console.log('Get cache '+ modelName + ': ' + cacheKey);
 
         BaasCMS.adapter = new BaasCMS.Adapter(BaasCMS.Adapters[BaasCMS.opts.baas], {
             cmsOpts: BaasCMS.opts,
+            onError: function(modelName, type, error) {
+                BaasCMS.opts.onError(modelName, type, error);                
+            },
             onStart: function(queryUid) {
                 loaderTimeouts[queryUid] = setTimeout(function() {
                     loaderTimeouts[queryUid] = 0;
