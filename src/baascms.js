@@ -1,23 +1,33 @@
-/*
+/**
  * BaasCMS core v. 1.0.0
  * Copyright (c) 2014 Artod gartod@gmail.com
  * MIT License
 */
 
 ;(function(window, document, _, $, undefined) {
+    'use strict';
+    
     window.BaasCMS = (window.BaasCMS || {});
     var BaasCMS = window.BaasCMS;
 
     BaasCMS.Router = (window.Path || function() {
         console.error('Requires Pathjs library.');
     });
-    
+
     BaasCMS.cons = {
         formFieldTypes: ['text', 'number', 'hidden', 'textarea', 'checkbox', 'select', 'google drive image', 'google drive file'],
         categoriesSelect: ['id', 'parent_id', 'name', 'pattern_name', 'count', 'icon']
     };
-    
+
     BaasCMS.utils = {
+        inherit: function (Child, Parent) {
+            var F = function() {};
+            F.prototype = Parent.prototype;
+
+            Child.prototype = new F();
+            Child.prototype.constructor = Child;
+            Child.super = Parent.prototype;
+        },
         collectDataForm: function($form) {
             var data = {};
 
@@ -58,8 +68,9 @@
 
             return data;
         }
-    };
     
+    };
+
     BaasCMS.cookie = {
         get: function(name) {
             var matches = document.cookie.match(new RegExp(
@@ -103,312 +114,56 @@
     };
 
     BaasCMS.loadHomePage = function() {}; // for admin panel
-    
-    BaasCMS.widgets = _.extend( (BaasCMS.widgets || {}), {
-        Categories: (function() {
-            var Categories = function(options) {
-                var options = options || {};
 
-                this.opts = _.extend({
-                    elementSelector: '',
-                    templateWrap: 'template-baascms-category-index',
-                    templateElement: 'template-baascms-category-element',
-                    select: BaasCMS.cons.categoriesSelect,
-                    where: null,
-                    beforeQuery: function() {},
-                    afterQuery: function() {},
-                    beforeRender: function() {},
-                    afterRender: function() {},
-                    onEnter: function() {}
-                }, options);
+    BaasCMS.Widget = (function() {
+        function Widget(options) {        
+            this.opts = _.extend({
+                elementSelector: '',
+                template: '',
+                templateWrap: '',
+                autoLoad: true,
+                cache: 'yes',
+                beforeQuery: function() {},
+                afterQuery: function() {},
+                beforeRender: function() {},
+                afterRender: function() {}
+            }, options);
 
-                this.currentCID = '';
-
-                this.$el = $();
-
-                /*$(BaasCMS.widgets).on('reload', function(e, sender) {
-                    if (that === sender) return;
-
-                    that.reload();
-                });*/
-
-                $(BaasCMS.widgets).on('route', function(e, route, params) {
-                    that.opts.onEnter.call(that, params['cid']);
-                });
-
-                var that = this;
-
-                $(function() {
-                    that.$el = $(that.opts.elementSelector);
-                    that.load();
-                });
-            };
-
-            Categories.prototype = {
-                load: function() {
-                    if (this.opts.beforeQuery.call(this) === false) {
-                        return;
-                    }
-
-                    var that = this;
-
-                    this.get().done(function(data) {
-                        if (that.opts.afterQuery.call(that, data) === false || that.opts.beforeRender.call(that, data) === false) {
-                            return;
-                        }
-
-                        that.render(data);
-
-                        that.opts.afterRender.call(that, data);
-                    });
-                },
-                get: function() {
-                    var param = {
-                        select: this.opts.select
-                    };
-
-                    if (this.opts.where) { // for caching query
-                        param.where = this.opts.where;
-                    }
-
-                    return BaasCMS.adapter.all('Category', param);
-                },
-                render: function(dataCategories) {
-                    var templateWrap = _.template( $('#' + this.opts.templateWrap).html() || 'Need to create template with id <i>' + this.opts.templateWrap + '</i>.' ),
-                        templateElement = _.template( $('#' + this.opts.templateElement).html() || 'Need to create template with id <i>' + this.opts.templateElement + '</i>.' ),
-                        that = this;
-
-                    var recurs = function(children, level) {
-                        var out = '';
-
-                        _.each(children, function(category, i) {
-                            var subcats = _.where(dataCategories, {parent_id: category.id}),
-                                htmlSubcats = (subcats.length ? templateWrap({
-                                    htmlCategories: recurs(subcats, level + 1)
-                                }) : '');
-
-                            out += templateElement({
-                                category: category,
-                                level: level,
-                                htmlSubcats: htmlSubcats,
-                                currentCID: that.currentCID
-                            });
-                        });
-
-                        return out;
-                    };
-
-                    this.$el.html( templateWrap({
-                        htmlCategories: recurs( _.where(dataCategories, {parent_id: ''}), 0 )
-                    }) );
-                }
-            };
-
-            return Categories;
-        })(),
-        Category: (function() {
-            var Category = function(options) {
-                this.opts = _.extend({
-                    elementSelector: '',
-                    template: 'template-baascms-category',
-                    cid: 0,
-                    autoLoad: true,
-                    beforeQuery: function() {},
-                    afterQuery: function() {},
-                    beforeRender: function() {},
-                    afterRender: function() {},
-                }, options);
-                
-                var that = this;
-                
-                if (that.opts.autoLoad) {
-                    that.load();
-                }
-            };
-
-            Category.prototype = {
-                load: function(params) {
-                    var that = this;
-
-                    this.get().done(function(data) {
-                        that.render(data);
-                    });
-                },
-                get: function() {
-                    if (this.opts.beforeQuery.call(this) === false) {
-                        return;
-                    }
-                    
-                    var that = this;
-                    
-                    return $.when(
-                        BaasCMS.adapter.getById('Category', this.opts.cid),
-                        BaasCMS.adapter.all('Category', {
-                            select: BaasCMS.cons.categoriesSelect
-                        })
-                    ).then(function(dataCategory, dataCategories) {
-                        var data = {
-                            category: dataCategory,
-                            children: _.where(dataCategories, {parent_id: that.opts.cid})
-                        };
-                        
-                        that.opts.afterQuery.call(this, data);
-                        
-                        return data;
-                    });
-                },
-                render: function(data, justReturn) {
-                    if (this.opts.beforeRender.call(this, data) === false) {
-                        return;
-                    }
-                    
-                    var template = _.template(
-                        $('#' + this.opts.template).html() ||
-                        'Need to create template with id <i>' + this.opts.template + '</i>.'
-                    );
-
-                    var html = template({
-                        cid: this.opts.cid,
-                        category: data.category,
-                        children: data.children
-                    });
-
-                    if (justReturn) {
-                        return html;
-                    }
-
-                    this.$el.html(html);
-                    
-                    this.opts.afterRender.call(this, data)
-                }
-            };
+            this.$el = $();
             
-            return Category;
-        })(),
-        Items: (function() {
-            var Items = function(options) {
-                var options = options || {},
-                    patternName = options.patternName,
-                    dasherized = _.str.dasherize(patternName);
+            var self = this;
 
-                this.opts = _.extend({
-                    patternName: '',
-                    elementSelector: '',
-                    templateWrap: 'template-baascms-items' + dasherized + '-wrap',
-                    templateElement: 'template-baascms-items' + dasherized + '-element',
-                    withoutCache: false,
-                    select: null,
-                    where: {},                    
-                    sort: '-createdAt',                    
-                    limit: 5,    
-                    skip: 0,
-                    autoLoad: true,
-                    beforeQuery: function() {},
-                    afterQuery: function() {},
-                    beforeRender: function() {},
-                    afterRender: function() {}
-                }, options);
-
-                var that = this;
-
-                this.$el = $();
-                $(function() {
-                    that.$el = $(that.opts.elementSelector);
-
-                    if (that.opts.autoLoad) {
-                        that.load();
-                    }
-                });
-            };
-
-            Items.prototype = {
-                load: function(params) {
-                    var that = this;
-
-                    this.get().done(function(data) {
-                        that.render(data);
-                    });
-                },
-                get: function(data) {
-                    if (this.opts.beforeQuery.call(this, data) === false) {
-                        return;
-                    }
-
-                    var sort = this.opts.sort,
-                        //skip = this.opts.perPage * Math.abs( parseInt(this.opts.page) - 1 ),
-                        that = this;
-
-                    return $.when(
-                        BaasCMS.adapter.all('Pattern'), // for cache
-                        BaasCMS.adapter.all(this.opts.patternName, {
-                            withoutCache: this.opts.withoutCache,
-                            select: this.opts.select,
-                            where: this.opts.where,
-                            limit: this.opts.limit,
-                            skip: this.opts.skip,
-                            order: sort
-                        })
-                    ).then(function(dataPatterns, dataItems) {
-                        var data = {
-                            items: dataItems,
-                            pattern: _.findWhere(dataPatterns, {name: that.opts.patternName})
-                        };
-
-                        that.opts.afterQuery.call(that, data);
-
-                        return data;
-                    });
-                },
-                render: function(data, justReturn) {
-                    if (this.opts.beforeRender.call(this, data) === false) {
-                        return;
-                    }
-
-                    var that = this;
-                    var compileTemplate = function(type) {
-                        var templateName = that.opts['template' + _.str.classify(type)],
-                            template = $('#' + templateName).html() ||
-                                $('#template-baascms-items-' + type).html() ||
-                                'Need to create template with id <i>' + templateName + '</i>.';
-
-                        return _.template(template);
-                    };
-
-                    var templateElement = compileTemplate('element'),
-                        templateWrap = compileTemplate('wrap'),
-                        htmlElements = '';
-
-                    _.each(data.items, function(item) {
-                        htmlElements += templateElement({
-                            opts: that.opts,
-                            item: item,
-                            pattern: data.pattern
-                        });
-                    });
-
-                    if (justReturn === 'el') {
-                        return htmlElements;
-                    }                    
-
-                    var html = templateWrap({
-                        opts: that.opts,
-                        data: data,
-                        pattern: data.pattern,
-                        htmlElements: htmlElements
-                    });
-
-                    if (justReturn) {
-                        return html;
-                    }
-
-                    this.$el.html(html);
-
-                    this.opts.afterRender.call(this, data);
+            $(function() {
+                self.$el = $(self.opts.elementSelector);
+                
+                if (self.opts.autoLoad) {
+                    self.load();
                 }
-            };
+            });
+        };
+        
+        _.extend(Widget.prototype, {
+            load: function() {
+                var self = this;
 
-            return Items;
-        })(),
+                this.get().done(function(data) {
+                    self.render(data);
+                });
+            },
+            compileTemplate: function(type, alternative) {
+                var id = this.opts['template' + (type ? _.str.classify(type) : '')];
+                        
+                return _.template(
+                    $('#' + id).html() ||
+                    alternative ||
+                    'Need to create template with id <i>' + id + '</i>.'
+                );
+            }
+        });
+        
+        return Widget;
+    })();
+    BaasCMS.widgets = _.extend( (BaasCMS.widgets || {}), {
         Main: (function() {
             var Main = function(options) {
                 var options = options || {};
@@ -418,52 +173,54 @@
                     routes: {},
                     category: {},
                     items: {},
+                    item: {},
                     beforeHome: function() {},
                     afterHome: function() {},
                 }, options);
 
                 this.routes = _.extend({}, this.opts.routes, {
                     '#/baascms/category/:cid(/page/:page)(/sort/:sort)': this.categoryOrItems,
-                    '#/baascms/category/:cid/item/:aid': this.item
+                    '#/baascms/category/:cid/item/:iid': this.item
                 });
-               
-                this.currentRoute = null;
-                this.itemsWidgets = {};
 
-                var that = this;
+                this.currentRoute = null;
+
+                var self = this;
 
                 this.$el = $();
-                
+
                 $(function() {
-                    that.$el = $(that.opts.elementSelector);
-                    that.initRoutes();
+                    self.$el = $(self.opts.elementSelector);
+                    self.initRoutes();
                 });
             };
 
-            Main.prototype = {
+            _.extend(Main.prototype, {
                 load: function() {
                     if (this.currentRoute && typeof this.currentRoute.run === 'function') {
                         this.currentRoute.run();
                     }
                 },
                 initRoutes: function() {
-                    var that = this;
+                    var self = this;
 
                     _.each(this.routes, function(action, route) {
                         BaasCMS.Router.map(route).to(function() {
-                            $(BaasCMS.widgets).trigger('route', [route, this.params]);
+                            $(BaasCMS.widgets).trigger('route', this);
 
                             if ( _.isFunction(action) ) {
-                                action.call(that, this.params);
-                                that.currentRoute = this;
+                                action.call(self, this.params);
+                                self.currentRoute = this;
                             }
                         });
                     });
-                    
+
                     Path.root('#/baascms');
-                    
+
                     BaasCMS.Router.rescue(function() {
-                        that.home();
+                        $(BaasCMS.widgets).trigger('route', this);
+
+                        self.home();
                     });
 
                     BaasCMS.Router.listen();
@@ -488,137 +245,540 @@
                     if (this.opts.beforeHome.call(this) === false) {
                         return false;
                     }
-                    
+
                     this.startWaiting();
-                    
-                    this.$el.html( _.template( $('#template-baascms-home').html(), {} ) );                   
-                    
+
+                    this.$el.html( _.template( $('#template-baascms-home').html(), {} ) );
+
                     this.opts.afterHome.call(this);
                 },
-                newItemsWidget: function(patternName, params) {
+                newWidgetItems: function(patternName, params) {
                     var page = parseInt(params['page']) || 1;
-                    
+
                     var widget = new BaasCMS.widgets.Items( _.extend({
                             patternName: patternName,
                             elementSelector: this.opts.elementSelector,
-                            withoutCache: true,
                             autoLoad: false
                         }, this.opts.items[patternName]
-                    ) );                    
-                    
+                    ) );
+
                     widget.opts.skip = (page - 1) * widget.opts.limit;
-                    
+
                     if (params['sort']) {
                         widget.opts.sort = params['sort'];
                     }
-                    
+
                     _.extend(widget.opts.where, {
                         category_id: params['cid']
-                    });                    
+                    });
 
                     return widget;
                 },
                 categoryOrItems: function(params) {
-                    var that = this,
-                        cid = params['cid'],
-                        waitfor = this.startWaiting();
+                    var cid = params['cid'],
+                        waitfor = this.startWaiting(),
+                        self = this;
                         
-                    var categoryWidget = new BaasCMS.widgets.Category( _.extend({
-                        elementSelector: this.opts.elementSelector,
-                        cid: cid,
-                        autoLoad: false
-                    }, this.opts.category) );
+                    BaasCMS.adapter.all('Category', {
+                        select: BaasCMS.cons.categoriesSelect
+                    }).done(function(dataCategories) {
+                        var currentCategory = _.findWhere(dataCategories, {id: cid});
+                        
+                        if (!currentCategory.id) {
+                            self.fill(waitfor, 'Category was not found.');
 
-                    categoryWidget.get().done(function(data) { //data = {category: {}, children: []}
-                        if (!data.category.pattern_name) {
-                            that.fill( waitfor, categoryWidget.render(data, true) );
-
-                            categoryWidget.opts.afterRender.call(categoryWidget, data);
-                            
                             return;
                         }
+                        
+                        if (!currentCategory.pattern_name) {
+                            var widgetCategory = new BaasCMS.widgets.Category( _.extend({
+                                elementSelector: self.opts.elementSelector,
+                                where: {
+                                    id: cid
+                                },
+                                autoLoad: false
+                            }, self.opts.category) );
+                            
+                            widgetCategory.get().done(function(data) {
+                                self.fill(waitfor, widgetCategory.render(data, true));
+                                
+                                widgetCategory.opts.afterRender.call(widgetCategory, data);
+                            });
 
-                        var itemsWidget = that.newItemsWidget(data.category.pattern_name, params),
-                            prevData = data;
+                            return;
+                        }
+                        
+                        var widgetItems = self.newWidgetItems(currentCategory.pattern_name, params);
 
-                        itemsWidget.get().done(function(itemsData) {
+                        widgetItems.get().done(function(itemsData) { // itemsData = { items: ..., categories: ..., pattern: ... }
                             var data = _.extend({
+                                category: currentCategory,
                                 page: parseInt(params['page']) || 1,
-                                pages: prevData.category.count ? Math.ceil( prevData.category.count/(itemsWidget.opts.limit || 1) ) : 1
-                            }, itemsData, prevData);
-                            
-                            that.fill( waitfor, itemsWidget.render(data, true) );
-                            
-                            itemsWidget.opts.afterRender.call(itemsWidget, data);
+                                pages: currentCategory.count ? Math.ceil( currentCategory.count/(widgetItems.opts.limit || 1) ) : 1
+                            }, itemsData);
+
+                            self.fill( waitfor, widgetItems.render(data, true) );
+
+                            widgetItems.opts.afterRender.call(widgetItems, data);
                         });
                     });
                 },
-                /* ! */ item: function(params) {
-                    var dataCategory, dataPattern,
-                        cid = params['cid'],
-                        aid = params['aid'];
+                item: function(params) {
+                    var cid = params['cid'],
+                        iid = params['iid'],
+                        waitfor = this.startWaiting(),
+                        self = this;
 
-                    BaasCMS.adapter.getById('Category', cid).then(function(data) {
-                        dataCategory = data;
+                    BaasCMS.adapter.all('Category', {
+                        select: BaasCMS.cons.categoriesSelect
+                    }).done(function(dataCategories) {
+                        var category = _.findWhere(dataCategories, {id: cid});
 
-                        if (!dataCategory || !dataCategory.id) {
-                            BaasCMS.Widgets.main.$el.html('Such a category was not found.');
+                        if (!category) {
+                            self.fill(waitfor, 'Category was not found.');
+
                             return;
                         }
 
-                        return $.when(
-                            BaasCMS.adapter.first('Pattern', {
-                                where: {name: dataCategory.pattern_name}
-                            }),
-                            BaasCMS.adapter.getById(dataCategory.pattern_name, aid, {
-                                withoutCache: true
-                            })
-                        );
-                    }).done(function(dataPattern, dataArticle) {
-                        if (!dataPattern || !dataArticle) {
+                        if (!category.pattern_name) {
+                            self.fill(waitfor, 'There is no pattern for this category.');
+
                             return;
                         }
 
-                        if (!dataPattern.name) {
-                            BaasCMS.Widgets.main.$el.html('There are no pattern for this category.');
-                            return;
-                        }
+                        var itemWidget = new BaasCMS.widgets.Item( _.extend({
+                            elementSelector: self.opts.elementSelector,
+                            patternName: category.pattern_name,
+                            iid: iid,
+                            autoLoad: false
+                        }, self.opts.item[category.pattern_name]) );
 
-                        if (!dataArticle.id) {
-                            BaasCMS.Widgets.main.$el.html('Article was not found.');
-                            return;
-                        }
+                        itemWidget.get().done(function(data) {
+                            self.fill( waitfor, itemWidget.render(data, true) );
 
-                        dataPattern.pattern.push({
-                            name: 'category_id',
-                            type: 'hidden'
-                        });
-
-                        var template = _.str.trim( $('#template-baascms' + _.str.dasherize(dataPattern.name) + '-form').html() ) || $('#template-baascms-form').html();
-
-                        BaasCMS.Widgets.main.$el.html( _.template( template, {
-                            header: 'Edit ' + _.str.humanize(dataPattern.name),
-                            button: 'Update',
-                            form: BaasCMS.Admin.generateForm(dataArticle, dataPattern.pattern)
-                        } ) );
-
-                        var $form = BaasCMS.Widgets.main.$el.find('form');
-                        $form.on('submit', function() {
-                            var data = BaasCMS.Admin.collectDataForm($form);
-
-                            BaasCMS.adapter.save(dataPattern.name, data).done(function(object) {
-
-                            });
-
-                            return false;
+                            itemWidget.opts.afterRender.call(itemWidget, data);
                         });
                     });
                 }
-            };
+            });
 
             return Main;
         })(),
-        /* ! */Breadcrumbs: function() {}
+        Category: (function() {
+            BaasCMS.utils.inherit(Category, BaasCMS.Widget);
+            
+            function Category(options) {
+                this.opts = _.extend({
+                    template: 'template-baascms-category',
+                    cache: 'no',
+                    select: null,
+                    where: {}
+                }, options);
+                
+                Category.super.constructor.call(this, this.opts);
+            }
+
+            _.extend(Category.prototype, {
+                get: function() {
+                    if (this.opts.beforeQuery.call(this) === false) {
+                        return;
+                    }
+
+                    var self = this;
+
+                    return $.when(
+                        BaasCMS.adapter.first('Category', {
+                            select: this.opts.select,
+                            where: this.opts.where, 
+                            cache: this.opts.cache
+                        }),
+                        BaasCMS.adapter.all('Category', {
+                            select: BaasCMS.cons.categoriesSelect                            
+                        })
+                    ).then(function(dataCategory, dataCategories) {
+                        var data = {
+                            category: dataCategory,
+                            children: _.where(dataCategories, {parent_id: dataCategory.id})
+                        };
+
+                        self.opts.afterQuery.call(this, data);
+
+                        return data;
+                    });
+                },
+                render: function(data, justReturn) {
+                    if (this.opts.beforeRender.call(this, data) === false) {
+                        return;
+                    }
+
+                    var template = this.compileTemplate();
+
+                    var html = template({
+                        cid: this.opts.cid,
+                        category: data.category,
+                        children: data.children
+                    });
+
+                    if (justReturn) {
+                        return html;
+                    }
+
+                    this.$el.html(html);
+
+                    this.opts.afterRender.call(this, data)
+                }
+            });
+
+            return Category;
+        })(),
+        Categories: (function() {
+            BaasCMS.utils.inherit(Categories, BaasCMS.Widget);
+            
+            function Categories(options) {
+                this.opts = _.extend({
+                    template: 'template-baascms-category-element',
+                    templateWrap: 'template-baascms-category-wrap',
+                    select: BaasCMS.cons.categoriesSelect,
+                    where: null,
+                    onEnter: function() {}
+                }, options);
+
+                this.currentCid = '';                
+
+                var self = this;
+                
+                $(BaasCMS.widgets).on('route', function(e, route) {
+                    self.currentCid = route.params ? route.params['cid'] : 0;
+                    self.opts.onEnter.call(self);
+                });
+                
+                Categories.super.constructor.call(this, this.opts);
+            };
+
+            _.extend(Categories.prototype, {
+                get: function() {
+                    if (this.opts.beforeQuery.call(this) === false) {
+                        return;
+                    }
+                    
+                    var param = {
+                        select: this.opts.select
+                    };
+
+                    if (this.opts.where) { // for caching query
+                        param.where = this.opts.where;
+                    }
+
+                    var self = this;
+                    
+                    return BaasCMS.adapter.all('Category', param).then(function(dataCategories) {
+                        var data = {
+                            categories: dataCategories
+                        };
+                        
+                        self.opts.afterQuery.call(self, data);
+                        
+                        return data;
+                    });
+                },
+                render: function(data, justReturn) {
+                    if (this.opts.beforeRender.call(this, data) === false) {
+                        return;
+                    }
+                        
+                    var template = this.compileTemplate(),
+                        templateWrap = this.compileTemplate('wrap');
+
+                    var self = this;
+
+                    var recurs = function(children, level) {
+                        var out = '';
+
+                        _.each(children, function(category, i) {
+                            var subcats = _.where(data.categories, {parent_id: category.id});
+                            
+                            var htmlChildren = (subcats.length ? templateWrap({
+                                htmlElements: recurs(subcats, level + 1)
+                            }) : '');
+
+                            out += template({
+                                category: category,
+                                level: level,
+                                currentCid: self.currentCid,
+                                htmlChildren: htmlChildren                                
+                            });
+                        });
+
+                        return out;
+                    };
+
+                    var htmlElements = recurs( _.where(data.categories, {parent_id: ''}), 0 );
+                    
+                    if (justReturn) {
+                        return htmlElements;
+                    }
+                    
+                    this.$el.html(templateWrap({
+                        htmlElements: htmlElements
+                    }));
+                    
+                    this.opts.afterRender.call(this, data);
+                }
+            });
+
+            return Categories;
+        })(),
+        Item: (function() {
+            BaasCMS.utils.inherit(Item, BaasCMS.Widget);
+            
+            function Item(options) {
+                this.opts = _.extend({
+                    elementSelector: '',
+                    patternName: '',
+                    iid: 0,
+                    cache: 'no'
+                }, options);
+
+                this.opts.template = (this.opts.template || 'template-baascms' + _.str.dasherize(this.opts.patternName) + '-item');
+
+                Item.super.constructor.call(this, this.opts);
+            };
+
+            _.extend(Item.prototype, {
+                get: function() {
+                    if (this.opts.beforeQuery.call(this) === false) {
+                        return;
+                    }
+
+                    var self = this;
+
+                    return $.when(
+                        BaasCMS.adapter.all('Category', { // all for cache
+                            select: BaasCMS.cons.categoriesSelect
+                        }),
+                        BaasCMS.adapter.all('Pattern'), // all for cache
+                        BaasCMS.adapter.getById(this.opts.patternName, this.opts.iid, {
+                            cache: this.opts.cache
+                        })
+                    ).then(function(dataCategories, dataPatterns, dataItem) {
+                        var data = {
+                            category: _.findWhere(dataCategories, {id: dataItem.category_id}),
+                            item: dataItem
+                        };
+
+                        data.pattern = _.findWhere(dataPatterns, {name: data.category.pattern_name});
+
+                        self.opts.afterQuery.call(this, data);
+
+                        return data;
+                    });
+                },
+                render: function(data, justReturn) {
+                    if (this.opts.beforeRender.call(this, data) === false) {
+                        return;
+                    }
+
+                    var template = this.compileTemplate('', $('#template-baascms-item').html());
+
+                    var html = template({
+                        iid: this.opts.iid,
+                        data: data,
+                        category: data.category,
+                        pattern: data.pattern,
+                        item: data.item
+                    });
+
+                    if (justReturn) {
+                        return html;
+                    }
+
+                    this.$el.html(html);
+
+                    this.opts.afterRender.call(this, data)
+                }
+            });
+
+            return Item;
+        })(),
+        Items: (function() {
+            BaasCMS.utils.inherit(Items, BaasCMS.Widget);
+            
+            function Items(options) {
+                this.opts = _.extend({
+                    patternName: '',
+                    cache: 'no',
+                    select: null,
+                    where: {},
+                    sort: '-createdAt',
+                    limit: 5,
+                    skip: 0
+                }, options);
+
+                var dasherized = _.str.dasherize(this.opts.patternName);
+
+                this.opts.templateWrap = (this.opts.templateWrap || 'template-baascms' + dasherized + '-items-wrap');
+                this.opts.template = (this.opts.template || 'template-baascms' + dasherized + '-items-element');
+
+                Items.super.constructor.call(this, this.opts);
+            };
+
+            _.extend(Items.prototype, {
+                get: function(data) {
+                    if (this.opts.beforeQuery.call(this, data) === false) {
+                        return;
+                    }
+
+                    var sort = this.opts.sort,
+                        self = this;
+
+                    return $.when(
+                        BaasCMS.adapter.all('Category', { // all for cache
+                            select: BaasCMS.cons.categoriesSelect
+                        }),
+                        BaasCMS.adapter.all('Pattern'), // all for cache
+                        BaasCMS.adapter.all(this.opts.patternName, {
+                            cache: this.opts.cache,
+                            select: this.opts.select,
+                            where: this.opts.where,
+                            limit: this.opts.limit,
+                            skip: this.opts.skip,
+                            order: sort
+                        })
+                    ).then(function(dataCategories, dataPatterns, dataItems) {
+                        var data = {
+                            items: dataItems,
+                            categories: dataCategories,
+                            pattern: _.findWhere(dataPatterns, {name: self.opts.patternName})
+                        };
+
+                        self.opts.afterQuery.call(self, data);
+
+                        return data;
+                    });
+                },
+                render: function(data, justReturn) {
+                    if (this.opts.beforeRender.call(this, data) === false) {
+                        return;
+                    }
+
+                    var self = this;
+
+                    var template = this.compileTemplate('', $('#template-baascms-items-element').html()),
+                        templateWrap = this.compileTemplate('wrap', $('#template-baascms-items-wrap').html()),
+                        htmlElements = '';
+
+                    _.each(data.items, function(item) {
+                        htmlElements += template({
+                            opts: self.opts,
+                            data: data,
+                            item: item,
+                            pattern: data.pattern
+                        });
+                    });
+
+                    if (justReturn === 'el') {
+                        return htmlElements;
+                    }
+
+                    var html = templateWrap({
+                        opts: self.opts,
+                        data: data,
+                        pattern: data.pattern,
+                        htmlElements: htmlElements
+                    });
+
+                    if (justReturn) {
+                        return html;
+                    }
+
+                    this.$el.html(html);
+
+                    this.opts.afterRender.call(this, data);
+                }
+            });
+
+            return Items;
+        })(),
+        Breadcrumbs: (function() {
+            BaasCMS.utils.inherit(Breadcrumbs, BaasCMS.Widget);
+
+            function Breadcrumbs(options) {   
+                this.opts = _.extend({
+                    elementSelector: '',
+                    template: 'template-baascms-breadcrumbs-element',
+                    templateWrap: 'template-baascms-breadcrumbs-wrap'
+                }, options);
+
+                this.currentCid = '';
+
+                var self = this;
+
+                $(BaasCMS.widgets).on('route', function(e, route) {                    
+                    self.currentCid = route.params ? route.params['cid'] : 0;
+                    self.load();
+                });
+                
+                Breadcrumbs.super.constructor.call(this, this.opts);
+            }
+            
+            _.extend(Breadcrumbs.prototype, {
+                get: function() {
+                    var self = this;
+
+                    return BaasCMS.adapter.all('Category', {
+                        select: BaasCMS.cons.categoriesSelect
+                    }).then(function(dataCategories) {
+                        var data = {
+                            categories: dataCategories
+                        };
+                        
+                        self.opts.afterQuery.call(self, data);
+                        
+                        return data;
+                    });
+                },
+                render: function(data) {
+                    if (this.opts.beforeRender.call(this, data) === false) {
+                        return;
+                    }
+
+                    var self = this,
+                        ancestors = [];
+
+                    var recurs = function(ancestor) {
+                        if (!ancestor) {
+                            return;
+                        }
+                        
+                        ancestors.push(ancestor);
+                        
+                        recurs( _.findWhere(data.categories, { id: ancestor.parent_id }) );
+                    };
+
+                    recurs( _.findWhere(data.categories, { id: this.currentCid }) );
+                    
+                    ancestors.reverse();
+                    
+                    var templateWrap = this.compileTemplate('wrap'),
+                        template = this.compileTemplate(),
+                        htmlElements = '';
+                    
+                    _.each(ancestors, function(ancestor) {
+                        htmlElements += template({
+                            category: ancestor
+                        })
+                    });
+                    
+                    this.$el.html(templateWrap({
+                        htmlElements: htmlElements
+                    }));
+                    
+                    this.opts.afterRender.call(this, data);                    
+                }
+            });
+
+            return Breadcrumbs;
+        })()
     });
 
     BaasCMS.adapters = (BaasCMS.adapters || {});
@@ -643,9 +803,7 @@
             this._concurrents = {};
 
             if (typeof adapter === 'function') {
-                var adapter = new adapter(opts.cmsOpts);
-
-                _.extend(this, adapter);
+                _.extend( this, new adapter(opts.cmsOpts) );
             }
         }
 
@@ -668,11 +826,11 @@
                 this._countCurrentQueries--;
                 this.opts.onComplete(queryUid);
 
-                var that = this;
+                var self = this;
 
                 setTimeout(function() {
-                    if (that._countCurrentQueries === 0) {
-                        that.busy = false;
+                    if (self._countCurrentQueries === 0) {
+                        self.busy = false;
                     }
                 }, 1);
             },
@@ -682,9 +840,9 @@
                     deferred = $.Deferred(),
                     cacheKey = 'query_' + id + '_' + JSON.stringify(opts),
                     concurrentsKey = modelName + '_' + cacheKey,
-                    that = this;
+                    self = this;
 
-                if ( opts.withoutCache === true || !this._cache[modelName] || _.isUndefined(this._cache[modelName][cacheKey]) ) {
+                if ( opts.cache === 'no' || !this._cache[modelName] || _.isUndefined(this._cache[modelName][cacheKey]) ) {
                     if (this._concurrents[concurrentsKey]) {
 console.log('Concurrents ' + cacheKey);
                        return this._concurrents[concurrentsKey].promise();
@@ -697,13 +855,13 @@ console.log('Concurrents ' + cacheKey);
                     var query = opts.count ? this._count(modelName, opts, deferred) : this._query(modelName, id, opts, deferred);
 
                     query.done(function(data) {
-                        that._cache[modelName] = that._cache[modelName] || {};
-                        that._cache[modelName][cacheKey] = JSON.stringify(data);
+                        self._cache[modelName] = self._cache[modelName] || {};
+                        self._cache[modelName][cacheKey] = JSON.stringify(data);
                     }).fail(function(error) {
-                        that.opts.onError(modelName, 'query', error);
+                        self.opts.onError(modelName, 'query', error);
                     }).always(function() {
-                        delete that._concurrents[concurrentsKey];
-                        that.onComplete(queryUid);
+                        delete self._concurrents[concurrentsKey];
+                        self.onComplete(queryUid);
                     });
 
                 } else {
@@ -737,47 +895,47 @@ console.log('Get cache '+ modelName + ': ' + cacheKey);
             save: function(modelName, opts) {
                 var deferred = $.Deferred(),
                     opts = opts || {},
-                    that = this;
+                    self = this;
 
                 var queryUid = this.onStart();
 
                 return this._save(modelName, opts, deferred).done(function(id) {
-                    delete that._cache[modelName];
+                    delete self._cache[modelName];
                 }).fail(function(error) {
-                    that.opts.onError(modelName, 'save', error);
+                    self.opts.onError(modelName, 'save', error);
                 }).always(function() {
-                    that.onComplete(queryUid);
+                    self.onComplete(queryUid);
                 });
             },
             del: function(modelName, ids) {
                 var ids = ids || '',
                     deferred = $.Deferred(),
-                    that = this;
+                    self = this;
 
                 ids = _.isArray(ids) ? ids : [ids];
 
                 var queryUid = this.onStart();
 
                 return this._del(modelName, ids, deferred).done(function() {
-                    delete that._cache[modelName];
+                    delete self._cache[modelName];
                 }).fail(function(error) {
-                    that.opts.onError(modelName, 'delete', error);
+                    self.opts.onError(modelName, 'delete', error);
                 }).always(function() {
-                    that.onComplete(queryUid);
+                    self.onComplete(queryUid);
                 });
             },
             delCategory: function(cid) {
                 var cids = [],
                     patternNames = [],
-                    that = this;
+                    self = this;
 
                 return $.when(
-                    that.all('Category', {
-                        withoutCache: true,
+                    self.all('Category', {
+                        cache: 'no',
                         select: ['id', 'name', 'parent_id']
                     }),
-                    that.all('Pattern', {
-                        withoutCache: true,
+                    self.all('Pattern', {
+                        cache: 'no',
                         select: ['name']
                     })
                 ).then(function(dataCategories, dataPatterns) {
@@ -803,8 +961,8 @@ console.log('Get cache '+ modelName + ': ' + cacheKey);
                     var patternDeferreds = [];
 
                     _.each(patternNames, function(patternName) {
-                        patternDeferreds.push( that.all(patternName, {
-                            withoutCache: true,
+                        patternDeferreds.push( self.all(patternName, {
+                            cache: 'no',
                             select: ['id'],
                             where: {
                                 'category_id': {
@@ -819,22 +977,22 @@ console.log('Get cache '+ modelName + ': ' + cacheKey);
                     var articleDeferreds = [];
 
                     _.each(arguments, function(dataArticle, i) {
-                        var aids = _.pluck(dataArticle, 'id');
+                        var iids = _.pluck(dataArticle, 'id');
 
-                        articleDeferreds.push( that.del(patternNames[i], aids) );
+                        articleDeferreds.push( self.del(patternNames[i], iids) );
                     });
 
                     return $.when.apply(this, articleDeferreds);
                 }).then(function() {
-                    return that.del('Category', cids);
+                    return self.del('Category', cids);
                 });
             },
             delItem: function(patternName, iid, cid) {
-                var that = this;
+                var self = this;
 
                 return this.del(patternName, iid).then(function() {
-                    return that.count(patternName, {
-                        withoutCache: true,
+                    return self.count(patternName, {
+                        cache: 'no',
                         where: {
                             category_id: cid
                         }
@@ -844,7 +1002,7 @@ console.log('Get cache '+ modelName + ': ' + cacheKey);
                         return;
                     }
 
-                    return that.save('Category', {
+                    return self.save('Category', {
                         id: cid,
                         count: count
                     });
@@ -856,36 +1014,36 @@ console.log('Get cache '+ modelName + ': ' + cacheKey);
     })();
 
     BaasCMS.message = function(message, type, delay) {
-        var $messages = $('#baascms-messages'), 
+        var $messages = $('#baascms-messages'),
             template = _.template( $('#template-baascms-message').html() || '' );
-        
+
         if (type === 'danger') {
-            console.error(message);            
+            console.error(message);
         }
-        
+
         $messages.fadeIn().append(template({
             message: message,
             type: type
-        }) );        
-        
+        }) );
+
         var $newMessage = $messages.children().last();
 
         setTimeout(function() {
             $newMessage.fadeOut(function() {
                 $(this).remove();
-                
+
                 if ( !$messages.children().length ) {
                     $messages.hide();
                 }
             });
-        }, delay || 2000);
+        }, delay || 3000);
     };
-    
+
     BaasCMS.inited = BaasCMS.inited || false;
     BaasCMS.init = function(options) {
         BaasCMS.opts = _.extend({
             baas: 'Parse',
-            onError: function(modelName, type, error) {                
+            onError: function(modelName, type, error) {
                 BaasCMS.message('Error ' + type + ' ' + modelName + ': ' + error.message, 'danger');
             },
             loaderDelay: 300
@@ -902,7 +1060,7 @@ console.log('Get cache '+ modelName + ': ' + cacheKey);
         BaasCMS.adapter = new BaasCMS.Adapter(BaasCMS.Adapters[BaasCMS.opts.baas], {
             cmsOpts: BaasCMS.opts,
             onError: function(modelName, type, error) {
-                BaasCMS.opts.onError(modelName, type, error);                
+                BaasCMS.opts.onError(modelName, type, error);
             },
             onStart: function(queryUid) {
                 loaderTimeouts[queryUid] = setTimeout(function() {
@@ -925,7 +1083,7 @@ console.log('Get cache '+ modelName + ': ' + cacheKey);
                 }
             }
         });
-    
+
         BaasCMS.inited = true;
     };
 
@@ -948,7 +1106,7 @@ console.log('Get cache '+ modelName + ': ' + cacheKey);
                     }, this.opts.items[patternName]);
                 },*/
 /*
-                        that.getItems(params, dataCategory.pattern_name).done(function(dataPatterns, dataArticles) {
+                        self.getItems(params, dataCategory.pattern_name).done(function(dataPatterns, dataArticles) {
                             var pattern = _.findWhere(dataPatterns, {name: dataCategory.pattern_name}) || {};
 
                             _.extend(data, {
@@ -956,13 +1114,13 @@ console.log('Get cache '+ modelName + ': ' + cacheKey);
                                 items: dataArticles
                             });
 
-                            if (itemsOpts.afterQuery.call(that, params, data) === false || itemsOpts.beforeRender.call(that, params, data) === false) {
+                            if (itemsOpts.afterQuery.call(self, params, data) === false || itemsOpts.beforeRender.call(self, params, data) === false) {
                                 return;
                             }
 
-                            that.fill( waitfor, that.renderItems(params, data, true) );
+                            self.fill( waitfor, self.renderItems(params, data, true) );
 
-                            itemsOpts.afterRender.call(that, params, data);
+                            itemsOpts.afterRender.call(self, params, data);
                         });
 
                         */
@@ -975,7 +1133,7 @@ return this.query(modelName, opts);
                 var deferred = $.Deferred(),
                     opts = opts || {},
                     cacheKey = 'count_' + JSON.stringify(opts),
-                    that = this;
+                    self = this;
 
                 if ( opts.withoutCache === true || !this._cache[modelName] || _.isUndefined(this._cache[modelName][cacheKey]) ) {
                     if (this._concurrents[cacheKey]) {
@@ -987,11 +1145,11 @@ return this.query(modelName, opts);
                     var queryUid = this.onStart();
 
                     this._count(modelName, opts, deferred).done(function(data) {
-                        that._cache[modelName] = that._cache[modelName] || {};
-                        that._cache[modelName][cacheKey] = data;
+                        self._cache[modelName] = self._cache[modelName] || {};
+                        self._cache[modelName][cacheKey] = data;
                     }).always(function() {
-                        delete that._concurrents[cacheKey];
-                        that.onComplete(queryUid);
+                        delete self._concurrents[cacheKey];
+                        self.onComplete(queryUid);
                     });
                 } else {
                     deferred.resolve(this._cache[modelName][cacheKey]);
@@ -1007,10 +1165,10 @@ return this.query(modelName, opts);
 
                             clearInterval(interval);
 
-                            if (opts.withoutCache === true || !that._cache[modelName] || !that._cache[modelName][cacheKey]) {
+                            if (opts.withoutCache === true || !self._cache[modelName] || !self._cache[modelName][cacheKey]) {
                                 make.call(this);
                             } else {
-                                deferred.resolve( JSON.parse(that._cache[modelName][cacheKey]) ); console.log('Get cache '+ modelName + ': ' + cacheKey);
+                                deferred.resolve( JSON.parse(self._cache[modelName][cacheKey]) ); console.log('Get cache '+ modelName + ': ' + cacheKey);
                             }
                         }, 50);*/
 
@@ -1018,9 +1176,9 @@ return this.query(modelName, opts);
         adapter: 'Parse'
     }, (BaasCMS.opts || {}) );
 
-    //BaasCMS.Widgets = ( BaasCMS.Widgets || {} );
+    //s = ( s || {} );
     //BaasCMS.controllers = ( BaasCMS.controllers || {} );
-    BaasCMS.Widget = (function() {
+     = (function() {
         var Widget = function(opts) {
 
         };
