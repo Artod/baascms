@@ -2,104 +2,193 @@
 <html>
     <head>
         <title>BaasCMS</title>
-
+		
 		<script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/underscore.string/2.3.3/underscore.string.min.js"></script>
 		<script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
-		<script src="//www.parsecdn.com/js/parse-1.2.19.min.js"></script>
-		<script src="//cdn.rawgit.com/mtrpcic/pathjs/master/path.min.js"></script>
-
-		<script src="baascms.js"></script>
-		<script src="baascms-adapter-parse.js"></script>
-		<script src="baascms-front-app.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/path.js/0.8.4/path.min.js"></script>		
+		<script src="//www.parsecdn.com/js/parse-1.2.19.min.js"></script>		
+		<script src="//rawgit.com/Artod/baascms/master/src/baascms.js"></script>
+		<script src="//rawgit.com/Artod/baascms/master/src/baascms-adapter-parse.js"></script>
 
 		<script>
-			Parse.initialize("", "");
+			Parse.initialize('', '');
 			
 			BaasCMS.init({
 				baas: 'Parse'
 			});			
 		</script>
    </head>
-    <body>	
-		<nav class="navbar navbar-default" role="navigation">
-			<div class="container-fluid">
-				<div class="navbar-header">
-					<a class="navbar-brand" href="#">BaasCMS</a>
-				</div>
-				<div class="collapse navbar-collapse">
-					<ul class="nav navbar-nav" id="menu">			
-						<script>
-							new Widget.categories({
-								el: '#menu',
-								query: {
-									where: {
-										marker: 'menu'
-									}
-								}
-							});
-						</script>
-					</ul>
-				</div>
-			</div>
-		</nav>	
-
-		<div class="container">
-			<div class="row">
-				<div class="col-sm-3" style="padding-top:50px;">
-					<div class="panel panel-default">
-						<div class="panel-heading">Categories</div>
-						<div class="panel-body" id="catalog">
-							<script>
-								new Widget.categories({
-									selector: '#catalog',
-									query: {
-										where: {
-											marker: 'catalog'
-										}
-									}
-								});
-							</script>
-						</div>
-					</div>
-				</div>
-				
-				<div class="col-sm-8 col-sm-offset-1" id="items">
-					<script>					
-						new Widget.main({
-							selector: '#items',
-							pattern: {
-								Article: {
-									perPage: 20
-								},
-								Product: {
-									perPage: 20
-								}
-							}
-						});
-					</script>
-				</div>
-			</div>
-		</div>		
-		
-		<script id="template-panel-categories" type="text/template">
-			<h1>Main page</h1>
-			
-			<div id="about"></div>
-			<<%= "script" %>>
-				new Widget.categories({
-					selector: '#about'
-				});
-			</<%= "script" %>>
-			
-			<div id="last-articles"></div>
-			<<%= "script" %>>
-				new Widget.items({
-					selector: '#last-articles'
-				});
-			</<%= "script" %>>
-			
+    <body>
+	
+	
+		<div id="place-for-categories"></div>		
+		<script>
+			new BaasCMS.widgets.Categories({
+				elementSelector: '#place-for-categories'
+			});
 		</script>
 		
+		
+		<div id="main-place"></div>		
+		<script>
+			new BaasCMS.widgets.Categories({
+				elementSelector: '#main-place'
+			});
+		</script>
+	
+		<!-- Don't remove this if you want loader -->
+		<div id="baascms-loader" style="display:none; position:fixed; top:20px; left:50%; margin-left:-30px; font-weight:bold;">Loading...</div>
+		
+		<!-- Don't remove this if you want messages -->
+		<div id="baascms-messages" style="display:none; position:fixed; top:50px; left:50%; margin-left:-200px; width:400px; font-weight:bold;"></div>		
+				
+		<!-- Don't remove this if you want messages -->
+		<script id="template-baascms-message" type="text/template">
+			<div class="alert alert-<%= type %> alert-dismissible"><%= message %></div>
+		</script>
+		
+		<!-- Template for home page -->
+		<script id="template-baascms-home" type="text/template">			
+			Home page!
+		</script>
+		
+		<!--
+			Default template for items wrap.
+			You can create template with id "template-baascms-{PATTERN_NAME}-items-wrap" for customizing items wrap of specific pattern
+		-->
+		<script id="template-baascms-items-wrap" type="text/template">			
+			<h1><%= _.str.humanize(data.pattern.name) %></h1>
+			
+			<table>
+				<thead>
+					<tr>
+						<% _.each(data.pattern.pattern, function(field) { %>
+							<% if ( field && !{"textarea": 1, "hidden": 1}[field.type] ) { %>
+								<th><a href="#/baascms/category/<%= data.category.id %>/page/<%= data.page %>/sort/<%= 
+									_.str.ltrim(opts.sort, "-") !== field.name
+										? field.name
+										: (opts.sort === field.name ? "-" + field.name : field.name)
+									%>"><%= _.str.humanize(field.name)%><%= _.str.ltrim(opts.sort, "-") !== field.name
+										? ""
+										: (opts.sort === field.name ? " ↑" : " ↓") %></a></th>
+							<% } %>
+						<% }) %>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					<%= htmlElements %>
+				</tbody>
+			</table>			
+
+			<% if (data.pages > 1) { %>
+				<div>	
+					<% for (var i = 1; data.pages >= i; i++) { %>
+						<a href="#/baascms/category/<%= data.category.id %>/page/<%= i %>/sort/<%= opts.sort %>"<%= data.page == i ? " style='font-weight:bold;'" : "" %>><%= i %></a>
+					<% } %>
+				</div>
+			<% } %>
+		</script>
+		
+		<!--
+			Default template for items element.
+			You can create template with id "template-baascms-{PATTERN_NAME}-items-element" for customizing items element of specific pattern
+		-->
+		<script id="template-baascms-items-element" type="text/template">			
+			<tr id="item<%= _.str.dasherize(data.category.pattern_name) %>-<%= item.id %>">			
+				<% _.each(data.pattern.pattern, function(field) { %>
+					<% if ( field && !{"textarea": 1, "hidden": 1}[field.type] ) { %>
+						<td>
+							<% if ( {"google drive image": 1}[field.type] && item[field.name] ) { %>						
+								<img src="<%= item[field.name] %>" width="50px" alt="" />								
+							<% } else  if ( {"google drive file": 1}[field.type] && item[field.name] ) { %>
+								<a href="<%= item[field.name] %>">Link</a>
+							<% } else { %>								
+								<%= item[field.name] %>								
+							<% } %>
+						</td>
+					<% } %>
+				<% }) %>
+			</tr>
+		</script>
+		
+		<!--
+			Default template for item.
+			You can create template with id "template-baascms-{PATTERN_NAME}-item" for customizing item of specific pattern
+		-->
+		<script id="template-baascms-item" type="text/template">			
+			<h1><%= item.name %></h1>
+			
+			<ul>
+				<% _.each(data.pattern.pattern, function(field) { %>
+					<% if (field && field.name !== "name" && !{"textarea": 1, "hidden": 1}[field.type] && item[field.name]) { %>
+						<li>
+							<% if ( {"google drive image": 1}[field.type] && item[field.name] ) { %>						
+								<img src="<%= item[field.name] %>" width="50px" alt="" />								
+							<% } else  if ( {"google drive file": 1}[field.type] && item[field.name] ) { %>
+								<a href="<%= item[field.name] %>">Link</a>
+							<% } else { %>								
+								<%= item[field.name] %>								
+							<% } %>
+						</li>
+					<% } %>
+				<% }) %>
+			</ul>	
+		</script>
+		
+		<!-- Default template for categories wrap. -->
+		<script id="template-baascms-categories-wrap" type="text/template">		
+			<ul>
+				<%= htmlElements %>
+			</ul>
+		</script>
+
+		<!-- Default template for categories element. -->
+		<script id="template-baascms-categories-element" type="text/template">
+			<li<%= routeParams["cid"] === category.id ? " style='font-weight:bold;'" : "" %>>
+				<% if (category.pattern_name) { %>
+					<a href="#/baascms/category/<%= category.id %>"><%= category.name %></a>
+				<% } else { %>
+					<%= category.name %>
+				<% } %>
+				<%= category.count || category.count == 0 ? "(" + category.count + ")" : "" %>
+				
+				<%= htmlChildren %>
+			</li>
+		</script>
+
+		<!-- Default template for category. -->
+		<script id="template-baascms-category" type="text/template">
+			<h1><%= category.name %></h1>
+			
+			<% if (data.children.length) { %>
+				<ul>
+					<% _.each(data.children, function(child) { %>
+						<li>
+							<a href="#/baascms/category/<%= child.id %>"><%= child.name %></a>
+						</li>
+					<% }) %>
+				</ul>
+			<% } %>
+			
+			<img src="<%= category.icon %>" alt="" />
+			
+			<%= category.body %>		
+		</script>		
+		
+		<!-- Default template for breadcrumbs wrap. -->
+		<script id="template-baascms-breadcrumbs-wrap" type="text/template">			
+			<ul>
+				<%= htmlElements %>
+			</ul>		
+		</script>
+		
+		<!-- Default template for breadcrumbs element. -->
+		<script id="template-baascms-breadcrumbs-element" type="text/template">
+			<li>
+				<a href="#/baascms/category/<%= category.id %>"><%= category.name %></a>
+			</li>	
+		</script>
     </body>
 </html>

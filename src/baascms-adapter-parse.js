@@ -1,9 +1,10 @@
-/*
+/**
  * BaasCMS adapter for Parse.com
  * Copyright (c) 2014 Artod gartod@gmail.com
+ * MIT License
 */
 
-;(function(root, _, $, Parse, undefined) {
+;(function(root, _, Parse, undefined) {
     var ParseAdapter = (function() {
         var _extractData = function(results, first) {            
             results = results || [];            
@@ -74,11 +75,11 @@
     
         function ParseAdapter(options) {
             if (!Parse) {
-                console.error('Requires Parse JavaScript SDK.');
+                console.info('Requires Parse JavaScript SDK.');
             }
         }
-    
-        ParseAdapter.prototype = {
+
+        _.extend(ParseAdapter.prototype, {
             _query: function(modelName, id, opts, deferred) {
                 var Model = Parse.Object.extend(modelName),
                     query = new Parse.Query(Model);                    
@@ -87,9 +88,9 @@
                     
                 query.find().done(function(results) {
                     var data = _extractData(results, opts.first);
-// setTimeout(function(){
+//setTimeout(function(){
                     deferred.resolve(data);
-// }, Math.random() * 2000)
+//}, Math.random() * 2000)
                 }).fail(function(error) {
                     deferred.reject(error);
                 });
@@ -118,11 +119,6 @@
             _save: function(modelName, data, deferred) {
                 var Model = Parse.Object.extend(modelName),
                     model = new Model();
-                
-                /*var modelACL = new Parse.ACL();                
-                modelACL.setPublicReadAccess(true);
-                modelACL.setRoleWriteAccess("Admin", true);
-                model.setACL(modelACL);*/
                 
                 model.save(data).done(function(result) {
                     var savedData = _extractData(result, true);
@@ -154,7 +150,7 @@
                 
                 return deferred.promise();
             }
-        };
+        });
         
         return ParseAdapter;
     })();
@@ -162,76 +158,8 @@
     root.BaasCMS = (root.BaasCMS || {});                
     var BaasCMS = root.BaasCMS;
     
-    BaasCMS.Adapters = (BaasCMS.Adapters || {});
+    BaasCMS.adapters = (BaasCMS.adapters || {});
     
-    BaasCMS.Adapters.Parse = ParseAdapter;    
+    BaasCMS.adapters.Parse = ParseAdapter;    
     
-})(window, window._, jQuery, window.Parse);
-
-
-
-
-                /*var roleACL = new Parse.ACL();
-                roleACL.setPublicReadAccess(true);
-                var role = new Parse.Role("Admin", roleACL);
-                role.save();*/
-                
-                /*var query = new Parse.Query(Parse.Role);
-                query.equalTo("name", "Admin");
-                query.find.then(function(results) {
-console.dir(results);*/
-/*});*/
-
-            /*getById: function(modelName, id, opts) {
-                return this.query(modelName, id, opts);
-            },
-            getAll: function(modelName, opts) {
-                return this.query(modelName, opts);
-            },*/
-
-/*
-                var deferred = $.Deferred(),
-                    Model = Parse.Object.extend(modelName),
-                    query = new Parse.Query(Model);
-                
-                query.get(id).done(function(object) {
-                    var data = object._serverData;                                    
-                    data.id = object.id;                                
-                    deferred.resolve(data);
-                }).fail(function(error) {
-                    _onError(modelName, error);
-                    deferred.reject(modelName, error);
-                });
-                
-                return deferred.promise();
-                
-                
-                
-
-                var deferred = $.Deferred(),
-                    Model = Parse.Object.extend(modelName),
-                    query = new Parse.Query(Model);
-                
-                query.find().done(function(results) {            
-                    var out = [];
-                    
-                    for (var i = 0; i < results.length; i++) { 
-                        var object = results[i],
-                            data = object._serverData;
-                        
-                        data.id = object.id;
-                        out.push(data);
-                    }
-
-                    deferred.resolve(out);
-                }).fail(function(model, error) {
-                    //_onError(model, error, onError);
-                    _onError(modelName, error);
-                    deferred.reject(modelName, error);
-                });
-
-                return deferred.promise();
-                
-                
-                
-                */
+})(window, window._, window.Parse);
