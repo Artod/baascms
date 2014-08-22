@@ -14,7 +14,7 @@
         console.error('Requires Pathjs library.');
     });
     
-    BaasCMS.Router.params = (BaasCMS.Router.params || {});
+    BaasCMS.Router.currentParams = (BaasCMS.Router.currentParams || {});
 
     BaasCMS.cons = {
         formFieldTypes: ['text', 'number', 'hidden', 'textarea', 'checkbox', 'select', 'google drive image', 'google drive file'],
