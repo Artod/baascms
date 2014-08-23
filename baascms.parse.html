@@ -88,7 +88,7 @@
 		<!-- Default template for categories element. -->
 		<script id="template-baascms-categories-element" type="text/template">
 			<li>
-				<a href="#/baascms/category/<%= category.id %>" id="category-<%= category.id %>" <%= routeParams["cid"] === category.id ? " style='font-weight:bold;'" : "" %>><%= category.name %></a>
+				<a href="#/baascms/category/<%= category.id %>" id="category-<%= category.id %>" <%= routeParams["cid"] === category.id ? " style='font-weight:bold;'" : "" %>><%= _.escape(category.name) %></a>
 				
 				<%= category.count || category.count == 0 ? "(" + category.count + ")" : "" %>
 				
@@ -105,7 +105,7 @@
 				<ul>
 					<% _.each(data.children, function(child) { %>
 						<li>
-							<a href="#/baascms/category/<%= child.id %>"><%= child.name %></a>
+							<a href="#/baascms/category/<%= child.id %>"><%= _.escape(child.name) %></a>
 						</li>
 					<% }) %>
 				</ul>
@@ -113,7 +113,9 @@
 			
 			<img src="<%= category.icon %>" alt="" />
 			
-			<%= category.body %>		
+			<p><%= category.description %></p>
+					
+			<%= category.article %>		
 		</script>
 		
 		
@@ -127,6 +129,7 @@
 			<table>
 				<thead>
 					<tr>
+						<th>Detail</th>
 						<% _.each(data.pattern.pattern, function(field) { %>
 							<% if ( field && !{"textarea": 1, "hidden": 1}[field.type] ) { %>
 								<th><a href="#/baascms/category/<%= data.category.id %>/page/<%= data.page %>/sort/<%= 
@@ -159,7 +162,8 @@
 			You can create template with id "template-baascms-{PATTERN_NAME}-items-element" for customizing items element of specific pattern
 		-->
 		<script id="template-baascms-items-element" type="text/template">			
-			<tr id="item<%= _.str.dasherize(data.category.pattern_name) %>-<%= item.id %>">			
+			<tr id="item<%= _.str.dasherize(data.category.pattern_name) %>-<%= item.id %>">
+				<td><a href="#/baascms/category/<%= data.category.id %>/item/<%= item.id %>">detail</a></td>
 				<% _.each(data.pattern.pattern, function(field) { %>
 					<% if ( field && !{"textarea": 1, "hidden": 1}[field.type] ) { %>
 						<td>
@@ -168,7 +172,7 @@
 							<% } else  if ( {"google drive file": 1}[field.type] && item[field.name] ) { %>
 								<a href="<%= item[field.name] %>">Link</a>
 							<% } else { %>								
-								<%= item[field.name] %>								
+								<%= _.escape(item[field.name]) %>								
 							<% } %>
 						</td>
 					<% } %>
@@ -185,7 +189,7 @@
 			
 			<ul>
 				<% _.each(data.pattern.pattern, function(field) { %>
-					<% if (field && field.name !== "name" && !{"textarea": 1, "hidden": 1}[field.type] && item[field.name]) { %>
+					<% if (field && field.name !== "name" && item[field.name]) { %>
 						<li>
 							<% if ( {"google drive image": 1}[field.type] && item[field.name] ) { %>						
 								<img src="<%= item[field.name] %>" width="50px" alt="" />								
@@ -213,7 +217,7 @@
 		<!-- Default template for breadcrumbs element. -->
 		<script id="template-baascms-breadcrumbs-element" type="text/template">
 			<li>
-				<a href="#/baascms/category/<%= category.id %>"><%= category.name %></a>
+				<a href="#/baascms/category/<%= category.id %>"><%= _.escape(category.name) %></a>
 			</li>	
 		</script>
 
