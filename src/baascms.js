@@ -638,7 +638,7 @@
                     patternName: '',
                     cache: 'no',
                     sort: '-createdAt',
-                    limit: 5,
+                    limit: 20,
                     skip: 0
                 }, options);
 
