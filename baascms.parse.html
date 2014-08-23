@@ -151,7 +151,7 @@
 			<% if (data.pages > 1) { %>
 				<div>	
 					<% for (var i = 1; data.pages >= i; i++) { %>
-						<a href="#/baascms/category/<%= data.category.id %>/page/<%= i %>/sort/<%= opts.sort %>"<%= routeParams.page == i ? " style='font-weight:bold;'" : "" %>><%= i %></a>
+						<a href="#/baascms/category/<%= data.category.id %>/page/<%= i %>/sort/<%= opts.sort %>"<%= data.page == i ? " style='font-weight:bold;'" : "" %>><%= i %></a>
 					<% } %>
 				</div>
 			<% } %>
