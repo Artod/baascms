@@ -518,7 +518,7 @@
                     var recurs = function(children, level) {
                         var out = '';
 
-                        _.each(children, function(category, i) {
+                        _.each(children, function(category) {
                             var subcats = _.where(data.categories, {parent_id: category.id});
 
                             var htmlChildren = (subcats.length ? templateWrap({
@@ -540,7 +540,16 @@
                         return out;
                     };
 
-                    var htmlElements = recurs( _.where(data.categories, {parent_id: ''}), 0 );
+                    var categoriesWithoutParent = [];
+                    _.each(data.categories, function(category) {
+                        if ( _.findWhere(data.categories, {id: category.parent_id}) ) {
+                            return;
+                        }
+                        
+                        categoriesWithoutParent.push(category);
+                    });
+                    
+                    var htmlElements = recurs(categoriesWithoutParent, 0);
                     
                     if (justReturn) {
                         return htmlElements;
