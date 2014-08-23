@@ -18,7 +18,7 @@
 
     BaasCMS.cons = {
         formFieldTypes: ['text', 'number', 'hidden', 'textarea', 'checkbox', 'select', 'google drive image', 'google drive file'],
-        categoriesSelect: ['id', 'parent_id', 'name', 'pattern_name', 'count', 'icon', 'description', 'template']
+        categoriesSelect: ['id', 'parent_id', 'name', 'pattern_name', 'count', 'icon', 'description', 'template', 'place']
     };
 
     BaasCMS.utils = {

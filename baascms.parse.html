@@ -27,7 +27,8 @@
 		
    </head>
     <body>
-
+		
+		Breadcrumbs:
 		<div id="nice-place-for-breadcrumbs"></div>		
 		<script>
 			new BaasCMS.widgets.Breadcrumbs({
@@ -35,7 +36,7 @@
 			});
 		</script>
 		
-	
+		Categories:
 		<div id="place-for-categories"></div>		
 		<script>
 			new BaasCMS.widgets.Categories({
@@ -78,8 +79,7 @@
 		
 		
 		<!-- Default template for categories wrap. -->
-		<script id="template-baascms-categories-wrap" type="text/template">				
-			<%= (level === 0 ? "Categories:" : "") %>
+		<script id="template-baascms-categories-wrap" type="text/template">
 			<ul>
 				<%= htmlElements %>
 			</ul>
@@ -207,7 +207,6 @@
 		
 		<!-- Default template for breadcrumbs wrap. -->
 		<script id="template-baascms-breadcrumbs-wrap" type="text/template">
-			Breadcrumbs:
 			<ul>
 				<li><a href="#">Home</a></li>
 				<%= htmlElements %>
