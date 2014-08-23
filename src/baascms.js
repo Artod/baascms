@@ -877,7 +877,7 @@
                     
                 if ( opts.cache === 'no' || !this._cache[modelName] || _.isUndefined(this._cache[modelName][cacheKey]) ) {
                     if (this._concurrents[concurrentsKey]) {
-console.log('Concurrents ' + cacheKey);
+// console.log('Concurrents ' + cacheKey);
                        return this._concurrents[concurrentsKey].promise();
                     }
 
@@ -899,7 +899,7 @@ console.log('Concurrents ' + cacheKey);
 
                 } else {
                     deferred.resolve( JSON.parse(this._cache[modelName][cacheKey]) );
-console.log('Get cache '+ modelName + ': ' + cacheKey);
+//console.log('Get cache '+ modelName + ': ' + cacheKey);
                 }
 
                 return deferred.promise();
