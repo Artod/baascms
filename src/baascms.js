@@ -239,7 +239,7 @@
 
                     return widget;
                 },
-                load: function() {
+                reload: function() {
                     if (this.currentRoute && typeof this.currentRoute.run === 'function') {
                         this.currentRoute.run();
                     }
@@ -258,8 +258,8 @@
                         });
                     });
 
-                    Path.root('#');
-
+                    BaasCMS.Router.root('#/');
+                        
                     BaasCMS.Router.rescue(function() {
                         this.params = this.params || {};                        
                         self._onRoute(this);                        
@@ -520,10 +520,11 @@
 
                         _.each(children, function(category, i) {
                             var subcats = _.where(data.categories, {parent_id: category.id});
-                            
+
                             var htmlChildren = (subcats.length ? templateWrap({
                                 routeParams: BaasCMS.Router.currentParams,
                                 opts: self.opts,
+                                level: level + 1,
                                 htmlElements: recurs(subcats, level + 1)
                             }) : '');
 
@@ -548,6 +549,7 @@
                     this.$el.html( templateWrap({
                         routeParams: BaasCMS.Router.currentParams,
                         opts: this.opts,
+                        level: 0,
                         htmlElements: htmlElements
                     }) );
                     
@@ -953,90 +955,6 @@ console.log('Get cache '+ modelName + ': ' + cacheKey);
                     self.opts.onError(modelName, 'delete', error);
                 }).always(function() {
                     self.onComplete(queryUid);
-                });
-            },
-            delCategory: function(cid) {
-                var cids = [],
-                    patternNames = [],
-                    self = this;
-
-                return $.when(
-                    self.all('Category', {
-                        cache: 'no',
-                        select: ['id', 'name', 'parent_id']
-                    }),
-                    self.all('Pattern', {
-                        cache: 'no',
-                        select: ['name']
-                    })
-                ).then(function(dataCategories, dataPatterns) {
-                    var descendants = [],
-                        generation = 0,
-                        recurs = function(categories, generation) {
-                            _.each(categories, function(category) {
-                                descendants.push(category);
-
-                                var children = _.where(dataCategories, {parent_id: category.id});
-                                if (children.length) {
-                                    recurs(children, generation + 1);
-                                }
-                            });
-                        };
-
-                    recurs( _.where(dataCategories, {parent_id: cid}), '', generation );
-
-                    cids = _.pluck(descendants, 'id');
-                    cids.push(cid);
-
-                    patternNames = _.pluck(dataPatterns, 'name');
-                    var patternDeferreds = [];
-
-                    _.each(patternNames, function(patternName) {
-                        patternDeferreds.push( self.all(patternName, {
-                            cache: 'no',
-                            select: ['id'],
-                            where: {
-                                'category_id': {
-                                    '$in': cids
-                                }
-                            }
-                        }) );
-                    });
-
-                    return $.when.apply(this, patternDeferreds);
-                }).then(function() {
-                    var articleDeferreds = [];
-
-                    _.each(arguments, function(dataArticle, i) {
-                        var iids = _.pluck(dataArticle, 'id');
-
-                        articleDeferreds.push( self.del(patternNames[i], iids) );
-                    });
-
-                    return $.when.apply(this, articleDeferreds);
-                }).then(function() {
-                    return self.del('Category', cids);
-                });
-            },
-            delItem: function(patternName, iid, cid) {
-                var self = this;
-
-                return this.del(patternName, iid).then(function() {
-                    return self.count(patternName, {
-                        cache: 'no',
-                        where: {
-                            category_id: cid
-                        }
-                    });
-                }).then(function(count) {
-                    if ( _.isUndefined(count) ) {
-                        return;
-                    }
-
-                    return self.save('Category', {
-                        id: cid,
-                        count: count
-                    });
                 });
             }
         };
