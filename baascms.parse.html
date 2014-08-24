@@ -36,6 +36,7 @@
 			});
 		</script>
 		
+		
 		Categories:
 		<div id="place-for-categories"></div>		
 		<script>
@@ -46,7 +47,7 @@
 					$('#category-' + route.params['cid']).css('font-weight', 'bold');
 				}
 			});
-		</script>	
+		</script>
 		
 		
 		<div id="main-place"></div>		
@@ -57,13 +58,13 @@
 		</script>
 
 	
-		<!-- Don't remove this if you want loader -->
+		<!-- Don't remove it if you need the loader. -->
 		<div id="baascms-loader" style="display:none; position:fixed; top:20px; left:50%; margin-left:-30px; font-weight:bold;">Loading...</div>
 		
 		
 		<!--
-			Don't remove this if you want messages. 
-			"type" can be "danger", "success", "info"
+			Don't remove it if you need the pop-up messages on your site. 
+			Variable "type" can be "danger", "success", "info"
 		-->
 		<div id="baascms-messages" style="display:none; position:fixed; top:50px; left:50%; margin-left:-200px; width:400px; font-weight:bold;"></div>
 		<script id="template-baascms-message" type="text/template">
@@ -71,21 +72,22 @@
 		</script>
 		
 		
-		<!-- Template for home page -->
+		<!-- Template for home page. -->
 		<script id="template-baascms-home" type="text/template">	
 			<h1>Home page!</h1>
 			Home page!
 		</script>
 		
 		
-		<!-- Default template for categories wrap. -->
+		<!-- Default template for the categories wrap. -->
 		<script id="template-baascms-categories-wrap" type="text/template">
 			<ul>
 				<%= htmlElements %>
 			</ul>
 		</script>
 
-		<!-- Default template for categories element. -->
+		
+		<!-- Default template for the categories element. -->
 		<script id="template-baascms-categories-element" type="text/template">
 			<li>
 				<a href="#/baascms/category/<%= category.id %>" id="category-<%= category.id %>" <%= routeParams["cid"] === category.id ? " style='font-weight:bold;'" : "" %>><%= _.escape(category.name) %></a>
@@ -96,7 +98,8 @@
 			</li>
 		</script>
 		
-		<!-- Default template for category detail. -->
+		
+		<!-- Default template for the category detail. -->
 		<script id="template-baascms-category" type="text/template">
 			<h1><%= category.name %></h1>
 			
@@ -120,8 +123,8 @@
 		
 		
 		<!--
-			Default template for items wrap.
-			You can create template with id "template-baascms-{PATTERN_NAME}-items-wrap" for customizing items wrap of specific pattern
+			Default template for the items wrap.
+			You can create a template with id "template-baascms-{DASHERIZED-PATTERN-NAME}-items-wrap" for customizing the items wrap of specific pattern
 		-->
 		<script id="template-baascms-items-wrap" type="text/template">			
 			<h1><%= _.str.humanize(data.pattern.name) %></h1>
@@ -157,9 +160,10 @@
 			<% } %>
 		</script>
 		
+		
 		<!--
-			Default template for items element.
-			You can create template with id "template-baascms-{PATTERN_NAME}-items-element" for customizing items element of specific pattern
+			Default template for the items element.
+			You can create a template with id "template-baascms-{DASHERIZED-PATTERN-NAME}-items-element" for customizing the items element of specific pattern
 		-->
 		<script id="template-baascms-items-element" type="text/template">			
 			<tr id="item<%= _.str.dasherize(data.category.pattern_name) %>-<%= item.id %>">
@@ -180,9 +184,10 @@
 			</tr>
 		</script>		
 		
+		
 		<!--
-			Default template for item detail.
-			You can create template with id "template-baascms-{PATTERN_NAME}-item" for customizing item detail of specific pattern
+			Default template for the item detail.
+			You can create a template with id "template-baascms-{DASHERIZED-PATTERN-NAME}-item" for customizing the item detail of specific pattern
 		-->
 		<script id="template-baascms-item" type="text/template">			
 			<h1><%= item.name %></h1>
@@ -212,6 +217,7 @@
 				<%= htmlElements %>
 			</ul>		
 		</script>
+		
 		
 		<!-- Default template for breadcrumbs element. -->
 		<script id="template-baascms-breadcrumbs-element" type="text/template">
