@@ -18,15 +18,6 @@ You can see the [Admin Panel](https://artod.github.io/baascms/admin/parse/#/) fo
 * Javascript Key: 0zHfA9FG8L1xR699qmFXjxkZ1pDxgml0MWZMpqJG
 
 
-## Dependencis ##
-
-* [Underscore.js](http://underscorejs.org/)
-* [Underscore.string](http://epeli.github.io/underscore.string/)
-* [jQuery](http://jquery.com/)
-* [PathJS](http://mtrpcic.github.io/pathjs/)
-* [Parse JavaScript SDK](https://www.parse.com) (for Parse.com version)
-
-
 ## Quick Start Guide ##
 
 Start working with BaasCMS (Parse.com version) by following these steps:
@@ -55,6 +46,15 @@ Tumblr as a hosting for your app:
 1. In the sidebar that appears, remove all and paste contents of your file *my-baascms-fronface.html*.
 1. Update preview and Save.
 1. Go to your tumblr blog at *{YOUR-BLOG-NAME}.tumblr.com*.
+
+
+## Dependencis ##
+
+* [Underscore.js](http://underscorejs.org/)
+* [Underscore.string](http://epeli.github.io/underscore.string/)
+* [jQuery](http://jquery.com/)
+* [PathJS](http://mtrpcic.github.io/pathjs/)
+* [Parse JavaScript SDK](https://www.parse.com) (for Parse.com version)
 
 
 ## TODO ##
