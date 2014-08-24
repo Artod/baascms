@@ -9,10 +9,10 @@ MIT License.
 
 ## Demo ##
 
-* [Demo App on GitHub Pages](https://artod.github.io/baascms/demo/#/)
-* [Demo App on Tumblr](http://baascms.tumblr.com/#/)
+* [BaasCMS Demo App on GitHub Pages](https://artod.github.io/baascms/demo/#/)
+* [BaasCMS Demo App on Tumblr](http://baascms.tumblr.com/#/)
 
-You can see the [Admin Panel](https://artod.github.io/baascms/admin/parse/#/) for the Demo App with the keys below:
+You can see the [Admin Panel](https://artod.github.io/baascms/admin/parse/#/) for the BaasCMS Demo App with the keys below:
 
 * Application ID: nM7P7NnFA95CK1WrqWOf9wa3mskctaTOdk9vYflj
 * Javascript Key: 0zHfA9FG8L1xR699qmFXjxkZ1pDxgml0MWZMpqJG
@@ -55,16 +55,6 @@ Tumblr as a hosting for your app:
 1. In the sidebar that appears, remove all and paste contents of your file *my-baascms-fronface.html*.
 1. Update preview and Save.
 1. Go to your tumblr blog at *{YOUR-BLOG-NAME}.tumblr.com*.
-
-
-
-
-
-
-
-
-
-
 
 
 ## TODO ##
